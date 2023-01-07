@@ -1,0 +1,19 @@
+{
+  "name": "constellium",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "checks:fix": "make black-fix && make isort-fix && make ruff-fix",
+    "checks:run": "make black && make isort && make ruff && make pytest && make mypy",
+    "husky:setup": "husky install && chmod ug+x .husky/*"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "17.3.0",
+    "@commitlint/config-conventional": "17.3.0",
+    "husky": "8.0.2",
+    "npm-run-all": "4.1.5",
+    "prettier": "2.8.1",
+    "prettier-plugin-packagejson": "2.3.0"
+  },
+  "packageManager": "yarn@3.3.0"
+}
