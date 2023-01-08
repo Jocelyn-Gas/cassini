@@ -8,19 +8,59 @@ from cassini.models.route import Route
 from cassini.readers.route import read_routes_from_csv, read_routes_from_excel
 
 
+def set_decoration_color() -> None:
+    streamlit.markdown(
+        """
+        <style>
+        div[data-testid="stDecoration"] {
+            background-image: linear-gradient(90deg, #1A2D75, #62AE2B);
+        }
+
+        header {
+            background: none !important;
+        }
+
+        div[data-testid="stForm"] {
+            padding: 2em;
+        }
+        .st-bk {
+           border-bottom-width: 2px;
+        }
+        .st-bi {
+           border-top-width: 2px;
+        }
+        .st-bj {
+           border-right-width: 2px;
+        }
+        .st-bh {
+           border-left-width: 2px;
+        }
+
+        button {
+            border-width: 2px !important;
+        }
+        svg {
+            color: #074A59;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+set_decoration_color()
+
 def read_routes_from_file() -> None:
     file = streamlit.session_state.input_file
-
-    streamlit.write("CSV FILE DETECTED")
     if file is None:
         del streamlit.session_state.routes
         return
 
     if file.name.endswith("csv"):
+
         streamlit.session_state.routes= read_routes_from_csv(file)
         return
 
     elif file.name.endswith("xls") or file.name.endswith("xlsx"):
+        streamlit.session_state.raw_routes = pandas.read_excel(streamlit.session_state.input_file)
         streamlit.session_state.routes = read_routes_from_excel(file)
         return
 
@@ -49,18 +89,17 @@ def compute_route(origin_label: str,destination_label:str) -> tuple[tuple[float,
 
 streamlit.title("Cassini")
 
-streamlit.write("Dans cette interface, vous pouvez calculer des durées de trajets.")
-
+streamlit.write("Dans cette interface, vous pouvez calculer des durées de trajets en camion.")
 streamlit.file_uploader("Trajets à calculer", ["csv", "xls", "xlsx"],accept_multiple_files=False, key="input_file", on_change=read_routes_from_file)
 
 if "routes" in streamlit.session_state:
+    if streamlit.button("Calculer les durées"):
+        routes: list[Route] = streamlit.session_state.routes
+        records = []
+        for route in routes:
+            data = compute_route(route.origin, route.destination)
+            records.append({"Origine": route.origin, "Destination": route.destination, "Coordonnées origine": data[0], "Coordonnées destination": data[1], "Durée": str(timedelta(seconds=data[2]))})
 
-    routes: list[Route] = streamlit.session_state.routes
-    records = []
-    for route in routes:
-        data = compute_route(route.origin, route.destination)
-        records.append({"Origine": route.origin, "Destination": route.destination, "Coordonnées origine": data[0], "Coordonnées destination": data[1], "Durée": str(timedelta(seconds=data[2]))})
-
-    streamlit.dataframe(pandas.DataFrame(records),use_container_width=True)
+        streamlit.dataframe(pandas.DataFrame(records),use_container_width=True)
 
 
