@@ -30,7 +30,7 @@ toml-sort: ## Upgrade poetry and dependencies
 	poetry run toml-sort --all --in-place $(TOML_FILES)
 
 start: ## Start streamlit application locally
-	poetry run streamlit run ./src/constellium/application/lotenc.py
+	poetry run streamlit run ./src/cassini/application/main.py
 
 black: ## Run Black
 	poetry run black --check --quiet $(PYTHON_FILES)
