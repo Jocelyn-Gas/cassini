@@ -102,7 +102,7 @@ def read_routes_from_file() -> None:
         del streamlit.session_state.raw_routes
         del streamlit.session_state.results
         return
-
+    streamlit.session_state.file_name = file.name.split(".", 1)[0]
     if file.name.endswith("csv"):
         streamlit.session_state.raw_routes = pandas.read_csv(
             streamlit.session_state.input_file
@@ -211,6 +211,6 @@ if "raw_routes" in streamlit.session_state:
         streamlit.download_button(
             "Télécharger le fichier",
             buffer,
-            file_name=f"resultas.xlsx",
+            file_name=f"{streamlit.session_state.file_name}-resultats.xlsx",
             mime="application/vnd.ms-excel",
         )
