@@ -54,6 +54,7 @@ pydantic = "^1.10.4"
 pandas = "^1.5.2"
 xlsxwriter = "^3.0.6"
 openpyxl = "^3.0.10"
+aiohttp = "^3.8.3"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.0.213"
