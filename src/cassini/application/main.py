@@ -192,12 +192,12 @@ if "raw_routes" in streamlit.session_state:
                         {
                             "Origine": route.origin.label,
                             "Destination": route.destination.label,
+                            "Durée": str(timedelta(seconds=route.duration)),
+                            "Distance": route.length,
                             "Longitude origine": route.origin.longitude,
                             "Latitude origine": route.origin.latitude,
                             "Longitude destination": route.destination.longitude,
                             "Latitude destination": route.destination.latitude,
-                            "Durée": str(timedelta(seconds=route.duration)),
-                            "Distance": route.length,
                         }
                     )
             streamlit.session_state.results = pandas.DataFrame(records)
