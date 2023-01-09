@@ -6,10 +6,15 @@ from io import BytesIO
 import pandas
 import requests
 import streamlit
+from PIL import Image
 
 from cassini.application.requesting import gather_coordinates, gather_routes
 
 
+def setup_tab_style() -> None:
+    streamlit.set_page_config("Cassini", Image.open("./assets/icon.png"))
+
+setup_tab_style()
 def compute_column_widths(dataframe: pandas.DataFrame, ratio: float = 1.25) -> list[float]:
     index_array = dataframe.index.astype(str)
     column_widths = [max((len(item) for item in index_array))]
@@ -146,9 +151,7 @@ def compute_route(
     )
     return origin, destination, request.json()["routes"][0]["time"]["value"], round(request.json()["routes"][0]["length"]["value"] / 1000, 2)
 
-
 streamlit.title("Cassini")
-
 streamlit.write(
     "Dans cette interface, vous pouvez calculer des durées de trajets en camion."
 )
