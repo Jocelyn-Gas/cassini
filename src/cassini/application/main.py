@@ -1,3 +1,4 @@
+import asyncio
 import io
 from datetime import timedelta
 from io import BytesIO
@@ -6,8 +7,7 @@ import pandas
 import requests
 import streamlit
 
-from cassini.models.route import Route
-from cassini.readers.route import read_routes_from_csv, read_routes_from_excel
+from cassini.application.requesting import gather_coordinates, gather_routes
 
 
 def compute_column_widths(dataframe: pandas.DataFrame, ratio: float = 1.25) -> list[float]:
@@ -99,20 +99,20 @@ set_decoration_color()
 def read_routes_from_file() -> None:
     file = streamlit.session_state.input_file
     if file is None:
-        del streamlit.session_state.routes
+        del streamlit.session_state.raw_routes
         del streamlit.session_state.results
         return
 
     if file.name.endswith("csv"):
-
-        streamlit.session_state.routes = read_routes_from_csv(file)
+        streamlit.session_state.raw_routes = pandas.read_csv(
+            streamlit.session_state.input_file
+        )
         return
 
     elif file.name.endswith("xls") or file.name.endswith("xlsx"):
         streamlit.session_state.raw_routes = pandas.read_excel(
             streamlit.session_state.input_file
         )
-        streamlit.session_state.routes = read_routes_from_excel(file)
         return
 
     raise ValueError("Le format du fichier n'est pas le bon.")
@@ -134,7 +134,7 @@ def get_coordinates(label: str) -> tuple[float, float]:
 
 def compute_route(
     origin_label: str, destination_label: str
-) -> tuple[tuple[float, float], tuple[float, float], float]:
+) -> tuple[tuple[float, float], tuple[float, float], float, float]:
     origin = get_coordinates(origin_label)
     destination = get_coordinates(destination_label)
     request = requests.get(
@@ -144,8 +144,7 @@ def compute_route(
             "referer": "https://fr.mappy.com/",
         },
     )
-    print(request.json()["routes"][0]["time"]["value"])
-    return origin, destination, request.json()["routes"][0]["time"]["value"]
+    return origin, destination, request.json()["routes"][0]["time"]["value"], round(request.json()["routes"][0]["length"]["value"] / 1000, 2)
 
 
 streamlit.title("Cassini")
@@ -161,24 +160,46 @@ streamlit.file_uploader(
     on_change=read_routes_from_file,
 )
 
-if "routes" in streamlit.session_state:
+if "raw_routes" in streamlit.session_state:
     if streamlit.button("Calculer les durées"):
-        routes: list[Route] = streamlit.session_state.routes
-        records = []
         if "results" not in streamlit.session_state:
-            for route in routes:
-                data = compute_route(route.origin, route.destination)
-                records.append(
-                    {
-                        "Origine": route.origin,
-                        "Destination": route.destination,
-                        "Longitude origine": data[0][0],
-                        "Latitude origine": data[0][1],
-                        "Longitude destination": data[1][0],
-                        "Latitude destination": data[1][1],
-                        "Durée": str(timedelta(seconds=data[2])),
-                    }
-                )
+            with streamlit.spinner("Calcul des coordonnées des adresses renseignées..."):
+                routes_dataframe: pandas.DataFrame = streamlit.session_state.raw_routes
+                labels = set()
+                trajets = []
+                for _, route in routes_dataframe.iterrows():
+                    labels.add(route["Origine"])
+                    labels.add(route["Destination"])
+                    trajets.append((route["Origine"],route["Destination"]))
+
+                locations = asyncio.run(gather_coordinates(labels))
+                mapping = {}
+
+                for location in locations:
+                    mapping[location.label] = location
+
+
+
+            with streamlit.spinner("Calcul des temps de trajets..."):
+                points = []
+                for trajet in trajets:
+                    points.append((mapping[trajet[0]], mapping[trajet[1]]))
+
+                routes = asyncio.run(gather_routes(points))
+                records = []
+                for route in routes:
+                    records.append(
+                        {
+                            "Origine": route.origin.label,
+                            "Destination": route.destination.label,
+                            "Longitude origine": route.origin.longitude,
+                            "Latitude origine": route.origin.latitude,
+                            "Longitude destination": route.destination.longitude,
+                            "Latitude destination": route.destination.latitude,
+                            "Durée": str(timedelta(seconds=route.duration)),
+                            "Distance": route.length,
+                        }
+                    )
             streamlit.session_state.results = pandas.DataFrame(records)
 
         streamlit.dataframe(streamlit.session_state.results, use_container_width=True)
