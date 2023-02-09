@@ -26,7 +26,7 @@ async def gather_coordinates(labels: Iterable[str]) -> list[Location]:
 
 async def get_route(origin: Location, destination: Location, session: aiohttp.ClientSession):
     async with session.get(
-        url=f"https://api-iti.mappy.net/multipath/7.0/routes?from={origin.longitude},{origin.latitude}&to={destination.longitude},{destination.latitude}&lang=fr_FR&providers=car&simplified=false&qid=348577cf-a377-4937-a0a1-da93672941b4&address_from=-&address_to=-&clientid=mappy&mid=876539520637&screensize=GE&abtest=NA&departure=true&vehicle=lt122",
+        url=f"https://api-iti.mappy.net/multipath/7.0/routes?from={origin.longitude},{origin.latitude}&to={destination.longitude},{destination.latitude}&lang=fr_FR&providers=car&simplified=false&qid=348577cf-a377-4937-a0a1-da93672941b4&address_from=-&address_to=-&clientid=mappy&mid=876539520637&screensize=GE&abtest=NA&departure=true&vehicle=van",
         headers={
                 "apikey": "f2wjQp1eFdTe26YcAP3K92m7d9cV8x1Z",
                 "referer": "https://fr.mappy.com/",
